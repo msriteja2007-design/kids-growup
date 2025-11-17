@@ -1,0 +1,42 @@
+query: "-- Insert sample videos for different age groups
+INSERT INTO public.videos (title, youtube_id, category, age_min, age_max, description) VALUES
+-- 3-5 year olds
+('Learn Colors with Fun', 'KkMwZqzk3LU', 'Colors', 3, 5, 'Learn all the colors in a fun way!'),
+('Count to 10', 'DR-cfDsHCGA', 'Math', 3, 5, 'Learn to count from 1 to 10'),
+('ABC Song', 'hq3yfQnllfQ', 'Speaking', 3, 5, 'Learn the alphabet song'),
+('Animal Sounds', 'W7dp5M2EgVs', 'Identifying Objects', 3, 5, 'Learn different animal sounds'),
+('Shapes Song', 'VydVJphFthU', 'Math', 3, 5, 'Learn all the basic shapes'),
+
+-- 6-8 year olds
+('Addition and Subtraction', 'gY-VUD99PxQ', 'Math', 6, 8, 'Learn basic addition and subtraction'),
+('How to Draw Animals', 'fYGPMWP9l3s', 'Drawing', 6, 8, 'Step by step animal drawing'),
+('Good Manners for Kids', 'VySO3mA22V4', 'Good Manners', 6, 8, 'Learn about being polite and kind'),
+('Helping at Home', 'gKaOwHXtV7g', 'Helping Parents', 6, 8, 'Ways to help your family'),
+('Multiplication Tables', 'fV9VLWJP19U', 'Math', 6, 8, 'Learn multiplication tables'),
+
+-- 8-10 year olds
+('Fractions Explained', 'wCLTAJMPgrE', 'Math', 8, 10, 'Understanding fractions'),
+('Science Experiments', 'mPYNVxHcwqY', 'Science', 8, 10, 'Fun science experiments to try'),
+('Creative Drawing', 'Xs0X8JA6cUg', 'Drawing', 8, 10, 'Advanced drawing techniques'),
+('Being Responsible', 'qJqW1vPyfEA', 'Good Manners', 8, 10, 'Learning about responsibility'),
+('Organization Skills', 'v8KGlIVcQDc', 'Life Skills', 8, 10, 'How to stay organized');
+
+-- Insert sample quizzes
+INSERT INTO public.quizzes (question, options, correct_answer, category, age_min, age_max, stars_reward) VALUES
+-- 3-5 year olds
+('What color is the sky?', '[\"Blue\", \"Green\", \"Red\", \"Yellow\"]', 'Blue', 'Colors', 3, 5, 2),
+('How many fingers do you have on one hand?', '[\"3\", \"4\", \"5\", \"6\"]', '5', 'Math', 3, 5, 2),
+('What sound does a dog make?', '[\"Meow\", \"Moo\", \"Woof\", \"Quack\"]', 'Woof', 'Animals', 3, 5, 2),
+('What shape is a ball?', '[\"Square\", \"Triangle\", \"Circle\", \"Rectangle\"]', 'Circle', 'Shapes', 3, 5, 2),
+
+-- 6-8 year olds
+('What is 5 + 3?', '[\"6\", \"7\", \"8\", \"9\"]', '8', 'Math', 6, 8, 2),
+('What should you say when someone gives you something?', '[\"Bye\", \"Hello\", \"Thank you\", \"Sorry\"]', 'Thank you', 'Manners', 6, 8, 2),
+('How can you help at home?', '[\"Make a mess\", \"Clean your room\", \"Be loud\", \"Ignore parents\"]', 'Clean your room', 'Helping', 6, 8, 2),
+('What is 4 x 2?', '[\"6\", \"8\", \"10\", \"12\"]', '8', 'Math', 6, 8, 2),
+
+-- 8-10 year olds
+('What is 1/2 + 1/4?', '[\"1/4\", \"1/2\", \"3/4\", \"1\"]', '3/4', 'Math', 8, 10, 3),
+('Which is a renewable energy source?', '[\"Coal\", \"Oil\", \"Solar\", \"Gas\"]', 'Solar', 'Science', 8, 10, 3),
+('What does being responsible mean?', '[\"Doing whatever you want\", \"Taking care of your duties\", \"Ignoring tasks\", \"Being lazy\"]', 'Taking care of your duties', 'Life Skills', 8, 10, 3),
+('What is the capital of France?', '[\"London\", \"Paris\", \"Berlin\", \"Rome\"]', 'Paris', 'Geography', 8, 10, 3);"
