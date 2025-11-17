@@ -1,0 +1,212 @@
+-- Create profiles table for children
+CREATE TABLE public.profiles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  age integer NOT NULL CHECK (age >= 3 AND age <= 10),
+  birthday date,
+  likes text,
+  avatar_url text,
+  total_stars integer DEFAULT 0,
+  treats_received integer DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Create parent_settings table
+CREATE TABLE public.parent_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  treat_threshold integer DEFAULT 50,
+  bedtime_hour integer DEFAULT 20,
+  bedtime_minute integer DEFAULT 0,
+  bedtime_mode_enabled boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Create tasks table
+CREATE TABLE public.tasks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  description text,
+  age_min integer NOT NULL,
+  age_max integer NOT NULL,
+  icon text,
+  stars_reward integer DEFAULT 1,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Create task_completions table
+CREATE TABLE public.task_completions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  task_id uuid REFERENCES public.tasks(id) ON DELETE CASCADE NOT NULL,
+  completed_at timestamptz DEFAULT now(),
+  stars_earned integer DEFAULT 1
+);
+
+-- Create videos table
+CREATE TABLE public.videos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  youtube_id text NOT NULL,
+  category text NOT NULL,
+  age_min integer NOT NULL,
+  age_max integer NOT NULL,
+  description text,
+  thumbnail_url text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Create quizzes table
+CREATE TABLE public.quizzes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  question text NOT NULL,
+  options jsonb NOT NULL,
+  correct_answer text NOT NULL,
+  category text NOT NULL,
+  age_min integer NOT NULL,
+  age_max integer NOT NULL,
+  stars_reward integer DEFAULT 2,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Create quiz_attempts table
+CREATE TABLE public.quiz_attempts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  quiz_id uuid REFERENCES public.quizzes(id) ON DELETE CASCADE NOT NULL,
+  is_correct boolean NOT NULL,
+  attempted_at timestamptz DEFAULT now(),
+  stars_earned integer DEFAULT 0
+);
+
+-- Create bedtime_stories table
+CREATE TABLE public.bedtime_stories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  content text NOT NULL,
+  age_min integer NOT NULL,
+  age_max integer NOT NULL,
+  duration_minutes integer DEFAULT 5,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable Row Level Security
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.task_completions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.videos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quizzes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bedtime_stories ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for profiles
+CREATE POLICY "Users can view their own profiles" ON public.profiles
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own profiles" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own profiles" ON public.profiles
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own profiles" ON public.profiles
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies for parent_settings
+CREATE POLICY "Users can view their own settings" ON public.parent_settings
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own settings" ON public.parent_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own settings" ON public.parent_settings
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- RLS Policies for tasks (public read)
+CREATE POLICY "Anyone can view tasks" ON public.tasks
+  FOR SELECT USING (true);
+
+-- RLS Policies for task_completions
+CREATE POLICY "Users can view their profiles' completions" ON public.task_completions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = task_completions.profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can create completions for their profiles" ON public.task_completions
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+-- RLS Policies for videos (public read)
+CREATE POLICY "Anyone can view videos" ON public.videos
+  FOR SELECT USING (true);
+
+-- RLS Policies for quizzes (public read)
+CREATE POLICY "Anyone can view quizzes" ON public.quizzes
+  FOR SELECT USING (true);
+
+-- RLS Policies for quiz_attempts
+CREATE POLICY "Users can view their profiles' quiz attempts" ON public.quiz_attempts
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = quiz_attempts.profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can create quiz attempts for their profiles" ON public.quiz_attempts
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = profile_id
+      AND profiles.user_id = auth.uid()
+    )
+  );
+
+-- RLS Policies for bedtime_stories (public read)
+CREATE POLICY "Anyone can view bedtime stories" ON public.bedtime_stories
+  FOR SELECT USING (true);
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for profiles
+CREATE TRIGGER update_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Insert default tasks
+INSERT INTO public.tasks (name, description, age_min, age_max, icon, stars_reward) VALUES
+('Brush Teeth', 'Brush your teeth morning and night', 3, 10, '🪥', 1),
+('Take a Bath', 'Take a nice bath', 3, 10, '🛁', 1),
+('Eat Breakfast', 'Have a healthy breakfast', 3, 10, '🥣', 1),
+('Drink Milk', 'Drink your milk', 3, 5, '🥛', 1),
+('Do Homework', 'Complete your homework', 6, 10, '📚', 2),
+('Clean Room', 'Tidy up your room', 8, 10, '🧹', 2),
+('Help Parents', 'Help mom or dad with chores', 6, 10, '🤝', 2),
+('Read a Book', 'Read for 15 minutes', 5, 10, '📖', 2);
+
+-- Insert sample bedtime stories
+INSERT INTO public.bedtime_stories (title, content, age_min, age_max, duration_minutes) VALUES
+('The Sleepy Moon', 'Once upon a time, there was a moon who loved to watch children sleep...', 3, 6, 5),
+('The Little Star', 'In the night sky, there lived a little star who wanted to be the brightest...', 3, 7, 5),
+('The Kind Dragon', 'There was once a dragon who helped all the forest animals...', 5, 10, 7);
